@@ -280,7 +280,6 @@
       return res.text();
     }
 
-    // 把来源页带给 /login
     function connectSpotify(){
       const from = window.__CURRENT_PAGE__ || 'home';
       window.location.href = '/login?from=' + encodeURIComponent(from);
@@ -585,7 +584,7 @@
                   <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t.name)}</div>
                   <div style="opacity:.8;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml((t.artists||[]).join(', '))}</div>
                 </div>
-                <button onclick="openTrackExternally('${t.external_url || ''}')" style="border:1px solid #333;background:transparent;color:#e6eef3;border-radius:8px;padding:6px 10px;cursor:pointer;">打开</button>
+                <button onclick="openTrackExternally('${t.external_url || ''}')" style="border:1px solid #333;background:transparent;color:#e6eef3;border-radius:8px;padding:6px 10px;cursor:pointer;">聴く</button>
               </div>
             `).join('')}
           </div>
