@@ -44,7 +44,7 @@
     <h1>Weather BGM Player</h1>
     <div id="weather-area"></div>
     <div style="margin-top:16px;">
-      <button class="spotify-btn" onclick="playWeatherOnSpotify()">在 Spotify 播放 天気BGM</button>
+      <button class="spotify-btn" onclick="playWeatherOnSpotify()">天気BGM</button>
     </div>
     <audio id="audio" controls></audio>
     <div id="player-bar">
@@ -56,17 +56,16 @@
         <input id="vol" type="range" min="0" max="100" value="50" />
       </div>
       <div class="spacer"></div>
-      <a id="open-in-spotify" href="#" target="_blank">在 Spotify 中打开</a>
-      <span id="premium-hint" class="muted">需要 Premium 才能网页内控制</span>
+      <a id="open-in-spotify" href="#" target="_blank">Spotifyで聴く</a>
+      <span id="premium-hint" class="muted">Premiumが必要</span>
     </div>
   </main>
 
   <script>
     const content = document.getElementById('content');
     const OWM_API_KEY = "0b0a5fb6ef2e3bc313bdc815bdcafd07";
-    window.__CURRENT_PAGE__ = 'home'; // 记录当前页面
-
-    // 根据 ?from=xxx 回到原页面（授权回调后触发）
+    window.__CURRENT_PAGE__ = 'home';
+    
     (function restoreFromParam(){
       const from = new URLSearchParams(location.search).get('from');
       if (from) {
@@ -84,7 +83,7 @@
             <h1>Weather BGM Player</h1>
             <div id="weather-area"></div>
             <div style="margin-top:16px;">
-              <button class="spotify-btn" onclick="playWeatherOnSpotify()">在 Spotify 播放 天気BGM</button>
+              <button class="spotify-btn" onclick="playWeatherOnSpotify()">天気BGM</button>
             </div>
             <audio id="audio" controls></audio>
             <div id="player-bar">
@@ -96,8 +95,8 @@
                 <input id="vol" type="range" min="0" max="100" value="50" />
               </div>
               <div class="spacer"></div>
-              <a id="open-in-spotify" href="#" target="_blank">在 Spotify 中打开</a>
-              <span id="premium-hint" class="muted">需要 Premium 才能网页内控制</span>
+              <a id="open-in-spotify" href="#" target="_blank">Spotifyで聴く</a>
+              <span id="premium-hint" class="muted">Premiumが必要</span>
             </div>
           `;
           loadWeather(); bindControlEvents(); initControls();
@@ -119,12 +118,12 @@
                 <input id="vol" type="range" min="0" max="100" value="50" />
               </div>
               <div class="spacer"></div>
-              <a id="open-in-spotify" href="#" target="_blank">在 Spotify 中打开</a>
-              <span id="premium-hint" class="muted">需要 Premium 才能网页内控制</span>
+              <a id="open-in-spotify" href="#" target="_blank">Spotifyで聴く</a>
+              <span id="premium-hint" class="muted">Premiumが必要</span>
             </div>
           `;
           bindControlEvents(); initControls();
-          renderUserPlaylists();   // ✅ 新增：加载并渲染歌单
+          renderUserPlaylists();   
         } else if (page === "settings") {
           content.innerHTML = `
             <h1>⚙️ 設定</h1>
@@ -134,7 +133,7 @@
               <input type="color" id="color-input" />
             </div>
           `;
-          setupColorPicker(); initControls(); // 保证按钮文案更新
+          setupColorPicker(); initControls(); // 
         }
         content.classList.remove("fade-out");
       }, 400);
@@ -166,13 +165,11 @@
       if (!area) return;
 
       try {
-        // 定位（带回退）
         const loc = await getLocationWithFallback();
         const lat = loc.lat;
         const lon = loc.lon;
         const cityFromGeo = loc.city;
 
-        // 请求 OWM（增加错误处理）
         const url = `https://api.openweathermap.org/data/2.5/weather?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&units=metric&lang=ja&appid=${encodeURIComponent(OWM_API_KEY)}`;
         const wRes = await fetch(url);
 
@@ -191,13 +188,11 @@
 
         const wData = await wRes.json();
 
-        // 解析
         const temp = Math.round(wData?.main?.temp ?? NaN);
         const weather = wData?.weather?.[0]?.description || '—';
         const main = wData?.weather?.[0]?.main || 'Clouds';
         const city = cityFromGeo || wData?.name || '—';
 
-        // 选择主题色/图标
         let icon = "🌈"; let accent = "#1db954";
         switch (main) {
           case "Clear": icon = "☀️"; accent = "#f7b733"; break;
@@ -210,13 +205,11 @@
           case "Fog": icon = "🌫️"; accent = "#aab2bd"; break;
         }
 
-        // 用户自定义颜色优先
         const savedAccent = localStorage.getItem('accentColor');
         const finalAccent = savedAccent || accent;
         document.documentElement.style.setProperty('--accent', finalAccent);
         document.body.style.background = `linear-gradient(180deg, ${finalAccent} 0%, #0e0f12 60%)`;
 
-        // 渲染
         const tempHtml = isNaN(temp) ? '—' : `${temp}°C`;
         area.innerHTML = `
           <div class="weather">
@@ -227,7 +220,6 @@
           </div>
         `;
 
-        // 给 Spotify 搜索用
         window.__WEATHER_MAIN__ = main;
 
       } catch (e) {
@@ -335,7 +327,6 @@
         return;
       }
 
-      // 显示用户名 & 设置页按钮文案
       try{
         const me = await api('/me');
         if (info) info.textContent = `🎧 ${me.display_name || me.id}`;
@@ -395,7 +386,7 @@
         return true;
       }
       try { const list = await api('/devices'); const active = list.devices?.find(d => d.is_active); if (active) return true; }catch{}
-      alert('找不到活跃的 Spotify 设备。请先在 Spotify 客户端/网页随便播放一首歌，然后再点播放。');
+      alert('Spotifyデバイスが見つかりません');
       return false;
     }
 
@@ -430,7 +421,6 @@
     }
 
     async function getLocationWithFallback() {
-      // 1) 先试浏览器定位（加 6 秒超时）
       const geoByBrowser = new Promise((resolve, reject) => {
         if (!navigator.geolocation) return reject(new Error('geolocation_unsupported'));
         const tid = setTimeout(() => reject(new Error('geolocation_timeout')), 6000);
@@ -438,7 +428,7 @@
           pos => { clearTimeout(tid); resolve({
             lat: pos.coords.latitude,
             lon: pos.coords.longitude,
-            city: null,  // 浏览器定位通常没城市名
+            city: null,
             source: 'browser'
           }); },
           err => { clearTimeout(tid); reject(err); },
@@ -453,7 +443,6 @@
         console.warn('[geo] browser failed:', e.message || e);
       }
 
-      // 2) 再试 IP 定位（ipapi）
       try {
         const resp = await fetch('https://ipapi.co/json/');
         if (resp.ok) {
@@ -468,12 +457,10 @@
         console.warn('[geo] ipapi error:', e);
       }
 
-      // 3) 最后兜底（东京）
       console.warn('[geo] fallback to default: Tokyo');
       return { lat: 35.681236, lon: 139.767125, city: '東京(デフォルト)', source: 'default' };
     }
 
-    // 拉取并渲染用户歌单
     async function renderUserPlaylists(){
       const grid = document.getElementById('playlists');
       const tracksPanel = document.getElementById('playlist-tracks');
@@ -482,7 +469,6 @@
       grid.innerHTML = `<div style="opacity:.8;">読み込み中...</div>`;
       tracksPanel.innerHTML = '';
 
-      // 未登录 → 提示连携
       const logged = await ensureLoggedIn();
       if (!logged) {
         grid.innerHTML = `<div style="opacity:.8;">未連携です。「Spotify 連携/更新」をクリックしてください。</div>`;
@@ -503,7 +489,7 @@
             <div class="pl-card" data-plid="${p.id}" data-uri="${p.uri}" data-ext="${p.external_url || ''}" style="background:rgba(0,0,0,.25);border:1px solid #222;border-radius:14px;padding:10px;">
               <div class="pl-cover" style="position:relative;cursor:pointer;">
                 ${img}
-                <button class="play-btn" title="播放" style="position:absolute;right:8px;bottom:8px;border:none;border-radius:18px;padding:8px 12px;background:#1DB954;color:#fff;cursor:pointer;">▶</button>
+                <button class="play-btn" title="再生" style="position:absolute;right:8px;bottom:8px;border:none;border-radius:18px;padding:8px 12px;background:#1DB954;color:#fff;cursor:pointer;">▶</button>
               </div>
               <div style="margin-top:8px;font-weight:600;line-height:1.3;">${escapeHtml(p.name)}</div>
               <div style="opacity:.8;font-size:12px;margin-top:2px;">${p.tracks_total} 曲 • by ${escapeHtml(p.owner)}</div>
@@ -515,13 +501,11 @@
           `;
         }).join('');
 
-        // 绑定事件：点击封面或播放按钮 → 播放歌单
         grid.querySelectorAll('.pl-card').forEach(card => {
           const id = card.dataset.plid;
           const uri = card.dataset.uri;
           const ext = card.dataset.ext;
 
-          // 播放
           card.querySelector('.pl-cover').addEventListener('click', () => {
             playSpotifyPlaylist({ id, uri, external_url: ext });
           });
@@ -530,13 +514,11 @@
             playSpotifyPlaylist({ id, uri, external_url: ext });
           });
 
-          // 在 Spotify 打开
           card.querySelector('.open-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             if (ext) window.open(ext, '_blank');
           });
 
-          // 展开曲目
           card.querySelector('.tracks-btn').addEventListener('click', async (e) => {
             e.stopPropagation();
             await renderTracksForPlaylist(id, card, tracksPanel);
@@ -549,7 +531,6 @@
       }
     }
 
-    // Premium → 网页内直接播放；非会员 → 跳到 Spotify
     async function playSpotifyPlaylist(playlist){
       setLastOpenUrl(playlist.external_url || null);
 
@@ -561,7 +542,6 @@
         return;
       }
 
-      // Premium：确保设备，就地播放
       const ok = await ensureActiveDevice();
       if (!ok) {
         if (playlist.external_url) location.href = playlist.external_url;
@@ -584,7 +564,6 @@
       }
     }
 
-    // 展开显示歌单曲目（只取前 100 首）
     async function renderTracksForPlaylist(playlistId, cardEl, panelEl){
       if (!panelEl) return;
       panelEl.innerHTML = `<div style="opacity:.8;">曲目読み込み中...</div>`;
@@ -596,7 +575,7 @@
           return;
         }
         panelEl.innerHTML = `
-          <h3 style="margin-top:12px;">曲目（前 ${items.length} 首）</h3>
+          <h3 style="margin-top:12px;">曲目（トップ ${items.length} 曲）</h3>
           <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-top:8px;">
             ${items.map((t,i)=>`
               <div style="display:flex;gap:10px;align-items:center;background:rgba(0,0,0,.25);border:1px solid #222;border-radius:10px;padding:8px;">
