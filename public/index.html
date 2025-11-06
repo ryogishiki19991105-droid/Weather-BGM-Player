@@ -622,7 +622,6 @@
       window.open(url, '_blank');
     }
 
-    // 简单转义，避免歌单名/艺人名里的特殊字符影响 HTML
     function escapeHtml(s){
       return (s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
     }
