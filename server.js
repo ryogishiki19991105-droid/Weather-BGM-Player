@@ -226,6 +226,11 @@ app.get('/logout', (req,res)=>{
   res.clearCookie('refresh_token');
   res.redirect(FRONTEND_URI);
 });
+app.post('/logout', (req, res) => {
+  res.clearCookie('access_token');
+  res.clearCookie('refresh_token');
+  res.json({ ok: true });
+});
 
 /* -------------------- Boot -------------------- */
 app.listen(PORT, ()=>{
