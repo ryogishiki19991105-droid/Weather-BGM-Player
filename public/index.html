@@ -42,6 +42,7 @@
     <button onclick="changePage('home')">🏠 ホーム</button>
     <button onclick="changePage('playlist')">🎵 プレイリスト</button>
     <button onclick="changePage('settings')">⚙️ 設定</button>
+    <button id="login-btn" class="spotify-btn"></button>
   </nav>
 
   <main id="content">
@@ -714,6 +715,20 @@
 
     function escapeHtml(s){
       return (s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+
+    async function logoutSpotify() {
+      try {
+        await fetch('/logout', { method: 'POST', credentials: 'include' });
+        localStorage.removeItem('spotify_access_token');
+        localStorage.removeItem('spotify_refresh_token');
+    
+        const logoutUrl = 'https://accounts.spotify.com/logout?continue=' 
+                          + encodeURIComponent(window.location.origin + '/login.html');
+        window.location.href = logoutUrl;
+      } catch (err) {
+        console.error('ログアウト失敗:', err);
+      }
     }
 
   </script>
