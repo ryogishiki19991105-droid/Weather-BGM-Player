@@ -58,7 +58,6 @@
       <button class="spotify-btn" style="background:#2b8a3e;" onclick="playWeatherLocally()">ブラウザでBGM再生</button>
     </div>
     <div id="weather-playlist" style="margin-top:24px;"></div>
-    <audio id="audio" controls></audio>
     <div id="player-bar">
       <button id="btn-prev">⏮︎</button>
       <button id="btn-play">▶</button>
@@ -219,8 +218,8 @@
                 <input id="vol" type="range" min="0" max="100" value="50" />
               </div>
               <div class="spacer"></div>
-              <a id="open-in-spotify" href="#" target="_blank">在 Spotify 中打开</a>
-              <span id="premium-hint" class="muted">需要 Premium 才能网页内控制</span>
+              <a id="open-in-spotify" href="#" target="_blank">Spotifyで聴く</a>
+              <span id="premium-hint" class="muted">Premiumが必要</span>
             </div>
           `;
           bindControlEvents(); initControls();
@@ -260,43 +259,22 @@
       label.textContent = text || '';
     }
 
-    function highlightLocalTrack() {
-      const container = document.getElementById('weather-playlist');
-      if (!container) return;
-      container.querySelectorAll('.playlist-track').forEach(el => {
-        const idx = Number(el.dataset.index);
-        if (idx === localPlaybackState.currentIndex) el.classList.add('active');
-        else el.classList.remove('active');
-      });
-    }
-
     function renderWeatherPlaylist(main) {
       const container = document.getElementById('weather-playlist');
       if (!container) return;
       const playlist = getWeatherPlaylist(main);
       if (!playlist) {
         container.innerHTML = '';
-        localPlaybackState.playlist = null;
-        localPlaybackState.currentIndex = -1;
-        updateCurrentTrackLabel('');
         return;
       }
 
-      localPlaybackState.playlist = playlist;
-      if (playlist.tracks?.length) {
-        localPlaybackState.currentIndex = Math.min(Math.max(localPlaybackState.currentIndex, 0), playlist.tracks.length - 1);
-      } else {
-        localPlaybackState.currentIndex = -1;
-      }
-
       const tracksHtml = (playlist.tracks || []).map((track, idx) => `
-        <div class="playlist-track" data-index="${idx}">
+        <div class="playlist-track">
           <span style="width:28px;opacity:.7;">${idx + 1}</span>
           <div class="track-meta">
             <div>${escapeHtml(track.title || 'Untitled')}</div>
             <small>${escapeHtml(track.artist || 'Unknown Artist')} • ${escapeHtml(track.mood || '')}</small>
           </div>
-          <span style="opacity:.5;font-size:12px;">▶</span>
         </div>
       `).join('');
 
@@ -305,118 +283,15 @@
           <h4>${escapeHtml(playlist.title || 'Weather Playlist')}</h4>
           <p>${escapeHtml(playlist.description || '')}</p>
           <div>${tracksHtml}</div>
-          <div class="muted" style="margin-top:12px;font-size:12px;">※ Pixabay掲載のフリーBGMをストリーミング再生しています。</div>
+          <div class="muted" style="margin-top:12px;font-size:12px;">※ Pixabay掲載のフリーBGM例です。</div>
         </div>
       `;
-
-      container.querySelectorAll('.playlist-track').forEach(el => {
-        el.addEventListener('click', () => {
-          const idx = Number(el.dataset.index || '0');
-          playLocalTrack(idx);
-        });
-      });
-
-      highlightLocalTrack();
-      const currentTrack = playlist.tracks?.[localPlaybackState.currentIndex];
-      if (currentTrack) updateCurrentTrackLabel(`🎶 ${currentTrack.title} - ${currentTrack.artist}`);
-      else updateCurrentTrackLabel('');
-    }
-
-    function ensureLocalVolume(player, slider) {
-      if (!player) return;
-      if (localPlaybackState.volume === null) {
-        const saved = parseFloat(localStorage.getItem(LOCAL_VOLUME_KEY));
-        localPlaybackState.volume = (Number.isFinite(saved) && saved >= 0 && saved <= 1) ? saved : 0.5;
-      }
-      player.volume = localPlaybackState.volume;
-      if (slider) slider.value = Math.round(localPlaybackState.volume * 100);
-    }
-
-    function setLocalVolume(value) {
-      localPlaybackState.volume = value;
-      localStorage.setItem(LOCAL_VOLUME_KEY, String(value));
-    }
-
-    function setupLocalAudioElement() {
-      const player = document.getElementById('audio');
-      if (!player) return;
-      if (player.__listenersBound) return;
-      const slider = document.getElementById('vol');
-      ensureLocalVolume(player, slider);
-      player.addEventListener('ended', () => {
-        if (localPlaybackState.playlist?.tracks?.length) {
-          playLocalNext();
-        }
-      });
-      player.addEventListener('play', () => setPlayButtonState(true));
-      player.addEventListener('pause', () => setPlayButtonState(false));
-      player.__listenersBound = true;
     }
 
     function setPlayButtonState(playing) {
       const btn = document.getElementById('btn-play');
       if (!btn) return;
       btn.textContent = playing ? '⏸︎' : '▶';
-    }
-
-    function getCurrentLocalTrack() {
-      const playlist = localPlaybackState.playlist;
-      if (!playlist || !playlist.tracks?.length) return null;
-      if (localPlaybackState.currentIndex < 0 || localPlaybackState.currentIndex >= playlist.tracks.length) return null;
-      return playlist.tracks[localPlaybackState.currentIndex];
-    }
-
-    function playLocalTrack(index) {
-      const playlist = localPlaybackState.playlist;
-      if (!playlist || !playlist.tracks?.length) return;
-      const player = document.getElementById('audio');
-      if (!player) return;
-
-      const boundedIndex = (index >= 0 && index < playlist.tracks.length) ? index : 0;
-      localPlaybackState.currentIndex = boundedIndex;
-      const track = playlist.tracks[boundedIndex];
-      player.src = track.url;
-      player.play().catch(() => {});
-      highlightLocalTrack();
-      updateCurrentTrackLabel(`🎶 ${track.title} - ${track.artist}`);
-      setPlayButtonState(true);
-    }
-
-    function playLocalNext() {
-      const playlist = localPlaybackState.playlist;
-      if (!playlist || !playlist.tracks?.length) return;
-      const nextIndex = (localPlaybackState.currentIndex + 1) % playlist.tracks.length;
-      playLocalTrack(nextIndex);
-    }
-
-    function playLocalPrev() {
-      const playlist = localPlaybackState.playlist;
-      if (!playlist || !playlist.tracks?.length) return;
-      const len = playlist.tracks.length;
-      const nextIndex = (localPlaybackState.currentIndex - 1 + len) % len;
-      playLocalTrack(nextIndex);
-    }
-
-    function toggleLocalPlayPause() {
-      const player = document.getElementById('audio');
-      if (!player) return;
-      if (!player.src) {
-        if (localPlaybackState.playlist?.tracks?.length) {
-          playLocalTrack(localPlaybackState.currentIndex >= 0 ? localPlaybackState.currentIndex : 0);
-        }
-        return;
-      }
-      if (player.paused) player.play().catch(() => {});
-      else player.pause();
-    }
-
-    function playWeatherLocally() {
-      const main = window.__WEATHER_MAIN__ || 'Clouds';
-      if (!localPlaybackState.playlist || getCurrentLocalTrack() === null) {
-        renderWeatherPlaylist(main);
-      }
-      const track = getCurrentLocalTrack();
-      if (track) playLocalTrack(localPlaybackState.currentIndex);
     }
 
     function setupColorPicker() {
@@ -442,35 +317,7 @@
       try {
         const loc = await getLocationWithFallback();
         const lat = loc.lat;
-        const lon = loc.lon;
-        const cityFromGeo = loc.city;
-
-        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&units=metric&lang=ja&appid=${encodeURIComponent(OWM_API_KEY)}`;
-        const wRes = await fetch(url);
-
-        if (!wRes.ok) {
-          const txt = await wRes.text().catch(() => '');
-          console.error('[weather] OWM not ok', wRes.status, txt);
-          if (wRes.status === 401) {
-            area.innerHTML = `<p>OpenWeatherMapのAPIキーが無効です（401）。キーを確認してください。</p>`;
-          } else if (wRes.status === 429) {
-            area.innerHTML = `<p>リクエストが多すぎます（429）。少し待ってから再試行してください。</p>`;
-          } else {
-            area.innerHTML = `<p>天気情報の取得に失敗しました（${wRes.status}）。</p>`;
-          }
-          return;
-        }
-
-        const wData = await wRes.json();
-
-        const temp = Math.round(wData?.main?.temp ?? NaN);
-        const weather = wData?.weather?.[0]?.description || '—';
-        const main = wData?.weather?.[0]?.main || 'Clouds';
-        const city = cityFromGeo || wData?.name || '—';
-
-        let icon = "🌈"; let accent = "#1db954";
-        switch (main) {
-          case "Clear": icon = "☀️"; accent = "#f7b733"; break;
+@@ -199,63 +338,67 @@
           case "Clouds": icon = "☁️"; accent = "#5f9ea0"; break;
           case "Rain": icon = "🌧️"; accent = "#4a90e2"; break;
           case "Drizzle": icon = "🌦️"; accent = "#6ec6ff"; break;
@@ -581,25 +428,20 @@
     function bindControlEvents(){
       const btnPrev=document.getElementById('btn-prev'); const btnPlay=document.getElementById('btn-play'); const btnNext=document.getElementById('btn-next'); const vol=document.getElementById('vol');
       let isPaused = true;
-      setupLocalAudioElement();
 
       if (btnPrev) btnPrev.onclick = async ()=>{
         if (IS_PREMIUM && spotifyPlayer){ try { await spotifyPlayer.previousTrack(); } catch(e){} }
-        else { playLocalPrev(); }
       };
 
       if (btnPlay) btnPlay.onclick = async ()=>{
         if (IS_PREMIUM && spotifyPlayer){
           try { if (isPaused) await spotifyPlayer.resume(); else await spotifyPlayer.pause(); }
           catch(e){}
-        } else {
-          toggleLocalPlayPause();
         }
       };
 
       if (btnNext) btnNext.onclick = async ()=>{
         if (IS_PREMIUM && spotifyPlayer){ try { await spotifyPlayer.nextTrack(); } catch(e){} }
-        else { playLocalNext(); }
       };
 
       if (vol) vol.oninput = async (e)=>{
@@ -607,23 +449,26 @@
         if (IS_PREMIUM && spotifyPlayer){
           try { await spotifyPlayer.setVolume(v); }
           catch(e){}
-        } else {
-          const player = document.getElementById('audio');
-          if (player){ player.volume = v; setLocalVolume(v); }
         }
       };
-
-      if (!IS_PREMIUM || !spotifyPlayer){
-        const player = document.getElementById('audio');
-        ensureLocalVolume(player, vol);
-      }
 
       if (window.Spotify && spotifyPlayer) {
         spotifyPlayer.addListener('player_state_changed', state => {
           if (!state) return; isPaused = state.paused;
           setPlayButtonState(!isPaused);
           if (vol && typeof state.device?.volume_percent === 'number') vol.value = state.device.volume_percent;
+          const current = state.track_window?.current_track;
+          if (current){
+            const artists = (current.artists || []).map(a => a.name).filter(Boolean).join(', ');
+            const meta = artists ? `${current.name} - ${artists}` : current.name;
+            updateCurrentTrackLabel(`🎶 ${meta}`);
+          } else {
+            updateCurrentTrackLabel('');
+          }
         });
+      } else {
+        updateCurrentTrackLabel('');
+        setPlayButtonState(false);
       }
     }
     async function initControls(){
@@ -635,6 +480,8 @@
         setControlsDisabled(false);
         const a=document.getElementById('open-in-spotify'); const h=document.getElementById('premium-hint');
         if(a) a.style.display='none'; if(h) h.style.display='none';
+        updateCurrentTrackLabel('');
+        setPlayButtonState(false);
         return;
       }
 
@@ -654,7 +501,9 @@
       }else{
         setControlsDisabled(false);
         const h=document.getElementById('premium-hint'); if(h) h.style.display='inline';
-        if (LAST_OPEN_URL){ const a=document.getElementById('open-in-spotify'); if(a){ a.style.display='inline'; a.href=LAST_OPEN_URL; } }
+        const a=document.getElementById('open-in-spotify');
+        if (a && LAST_OPEN_URL){ a.style.display='inline'; a.href=LAST_OPEN_URL; }
+        else if (a) a.style.display='none';
       }
     }
 
@@ -724,21 +573,22 @@
       setLastOpenUrl(openUrl);
 
       if (!(await isPremiumUser())) {
-        if (openUrl) setLastOpenUrl(openUrl);
-        playWeatherLocally();
+        if (openUrl) {
+          window.open(openUrl, '_blank');
+        } else {
+          alert('Spotify Premiumが必要です');
+        }
         return;
       }
       if (!(await ensureActiveDevice())) {
-        if (openUrl) setLastOpenUrl(openUrl);
-        playWeatherLocally();
+        if (openUrl) window.open(openUrl, '_blank');
         return;
       }
 
       const body = contextUri ? { context_uri: contextUri } : { uris: [trackUri] };
       const playRes = await fetch('/play', { method:'PUT', credentials:'include', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
       if (!playRes.ok) {
-        if (openUrl) setLastOpenUrl(openUrl);
-        playWeatherLocally();
+        if (openUrl) window.open(openUrl, '_blank');
       }
     }
 
