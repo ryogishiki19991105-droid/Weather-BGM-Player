@@ -127,19 +127,6 @@
             </div>
             <div id="playlists" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;"></div>
             <div id="playlist-tracks" style="margin-top:20px;"></div>
-            <div id="player-bar">
-              <button id="btn-prev">⏮︎</button>
-              <button id="btn-play">▶</button>
-              <button id="btn-next">⏭︎</button>
-              <div id="current-track" class="muted" style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-              <div style="display:flex;align-items:center;gap:6px;margin-left:12px;">
-                <span>🔊</span>
-                <input id="vol" type="range" min="0" max="100" value="50" />
-              </div>
-              <div class="spacer"></div>
-              <a id="open-in-spotify" href="#" target="_blank">Spotifyで聴く</a>
-              <span id="premium-hint" class="muted">Premiumが必要</span>
-            </div>
           `;
           bindControlEvents(); initControls();
           renderUserPlaylists();   
@@ -312,6 +299,11 @@
       }
       renderWeatherPlaylist('Default');
       loadWeather(); loadBattery(); bindControlEvents(); initControls();
+      
+      const loginBtn = document.getElementById('login-btn');
+      if (loginBtn) {
+        loginBtn.onclick = connectSpotify;
+      }
     };
 
     async function loadBattery() {
