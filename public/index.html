@@ -11,12 +11,15 @@
       background: linear-gradient(180deg, var(--accent) 0%, #0e0f12 60%);
       color: #e6eef3; font-family: "Segoe UI", sans-serif; transition: background 0.6s ease;
     }
+        /* ★天気アニメ用キャンバス（画面全体に固定表示） */
     #weather-animation {
       position: fixed;
-      inset: 0;             
-      pointer-events: none; 
-      z-index: 0;           
+      inset: 0;              /* top:0;right:0;bottom:0;left:0 と同じ */
+      pointer-events: none;  /* クリックなどを邪魔しない */
+      z-index: 0;            /* 一番後ろ側 */
     }
+
+    /* nav と main がアニメの上に来るように */
     nav, main {
       position: relative;
       z-index: 1;
@@ -39,6 +42,9 @@
     li { margin: 12px 0; cursor: pointer; transition: color 0.3s; }
     li:hover { color: var(--accent); }
     audio { margin-top: 20px; width: 100%; }
+    #player-bar{position:sticky;bottom:0;left:0;right:0;padding:12px;border-top:1px solid #333;display:flex;gap:12px;align-items:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);}
+    #player-bar button,#player-bar input[type=range]{cursor:pointer;}
+    #player-bar .spacer{flex:1;}
     #premium-hint{display:none;margin-left:8px;opacity:.8;}
     #open-in-spotify{display:none;color:#1DB954;text-decoration:underline;}
   </style>
@@ -64,6 +70,20 @@
     </div>
     <div id="weather-playlist" style="margin-top:24px;"></div>
 
+    <!-- 下のバーは従来通り（Spotify Web Playback 用）。ローカルmp3には使わない -->
+    <div id="player-bar">
+      <button id="btn-prev">⏮︎</button>
+      <button id="btn-play">▶</button>
+      <button id="btn-next">⏭︎</button>
+      <div id="current-track" class="muted" style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+      <div style="display:flex;align-items:center;gap:6px;margin-left:12px;">
+        <span>🔊</span>
+        <input id="vol" type="range" min="0" max="100" value="50" />
+      </div>
+      <div class="spacer"></div>
+      <a id="open-in-spotify" href="#" target="_blank">Spotifyで確認する</a>
+      <span id="premium-hint" class="muted">Premiumが必要</span>
+    </div>
   </main>
 
   <script>
@@ -271,7 +291,9 @@
             <h3>${city} の天気</h3>
             <p>${icon} ${weather}</p>
             <div class="temp">${tempHtml}</div>
-            <div style="margin-top:6px;opacity:.7;font-size:14px;">データ元: ${loc.source === 'browser' ? 'ブラウザ位置情報' : loc.source === 'ipapi' ? 'IP位置情報' : 'デフォルト'}</div>
+            <div style="margin-top:6px;opacity:.7;font-size:14px;">データ元: ${loc.source === 'browser' ? 'ブラウザ位置情報'
+              : loc.source === 'ipapi' ? 'IP位置情報'
+              : 'デフォルト'}</div>
           </div>
         `;
 
@@ -527,45 +549,39 @@
     }
 
     async function getLocationWithFallback() {
-      const geoByBrowser = new Promise((resolve, reject) => {
-        if (!navigator.geolocation) return reject(new Error('geolocation_unsupported'));
-        const tid = setTimeout(() => reject(new Error('geolocation_timeout')), 6000);
-        navigator.geolocation.getCurrentPosition(
-          pos => { clearTimeout(tid); resolve({
-            lat: pos.coords.latitude,
-            lon: pos.coords.longitude,
-            city: null,
-            source: 'browser'
-          }); },
-          err => { clearTimeout(tid); reject(err); },
-          { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
-        );
-      });
-
-      try {
-        const r = await geoByBrowser;
-        return r;
-      } catch (e) {
-        console.warn('[geo] browser failed:', e.message || e);
-      }
-
+    // ① まず ipapi から位置情報を取得（IPベース）
       try {
         const resp = await fetch('https://ipapi.co/json/');
-        if (resp.ok) {
-          const j = await resp.json();
-          if (j && j.latitude && j.longitude) {
-            return { lat: j.latitude, lon: j.longitude, city: j.city || null, source: 'ipapi' };
-          }
-        } else {
+        if (!resp.ok) {
           console.warn('[geo] ipapi status:', resp.status);
+          throw new Error('ipapi status ' + resp.status);
         }
-      } catch (e) {
-        console.warn('[geo] ipapi error:', e);
-      }
 
-      console.warn('[geo] fallback to default: Tokyo');
-      return { lat: 35.681236, lon: 139.767125, city: '東京(デフォルト)', source: 'default' };
+        const j = await resp.json();
+        // ipapi は latitude / longitude / city を返してくれる
+        if (j && typeof j.latitude === 'number' && typeof j.longitude === 'number') {
+          return {
+            lat: j.latitude,
+            lon: j.longitude,
+            city: j.city || null,
+            source: 'ipapi'
+          };
+        }
+
+        throw new Error('ipapi response missing lat/lon');
+      } catch (e) {
+        console.warn('[geo] ipapi error, fallback to default Tokyo:', e);
+
+        // ② ipapi がダメだった場合は東京駅付近をデフォルトにする
+        return {
+          lat: 35.681236,
+          lon: 139.767125,
+          city: '東京(デフォルト)',
+          source: 'default'
+        };
+      }
     }
+
 
     async function renderUserPlaylists(){
       const grid = document.getElementById('playlists');
