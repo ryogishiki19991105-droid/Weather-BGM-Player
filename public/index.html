@@ -39,9 +39,6 @@
     li { margin: 12px 0; cursor: pointer; transition: color 0.3s; }
     li:hover { color: var(--accent); }
     audio { margin-top: 20px; width: 100%; }
-    #player-bar{position:sticky;bottom:0;left:0;right:0;padding:12px;border-top:1px solid #333;display:flex;gap:12px;align-items:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);}
-    #player-bar button,#player-bar input[type=range]{cursor:pointer;}
-    #player-bar .spacer{flex:1;}
     #premium-hint{display:none;margin-left:8px;opacity:.8;}
     #open-in-spotify{display:none;color:#1DB954;text-decoration:underline;}
   </style>
@@ -67,20 +64,6 @@
     </div>
     <div id="weather-playlist" style="margin-top:24px;"></div>
 
-    <!-- 下のバーは従来通り（Spotify Web Playback 用）。ローカルmp3には使わない -->
-    <div id="player-bar">
-      <button id="btn-prev">⏮︎</button>
-      <button id="btn-play">▶</button>
-      <button id="btn-next">⏭︎</button>
-      <div id="current-track" class="muted" style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-      <div style="display:flex;align-items:center;gap:6px;margin-left:12px;">
-        <span>🔊</span>
-        <input id="vol" type="range" min="0" max="100" value="50" />
-      </div>
-      <div class="spacer"></div>
-      <a id="open-in-spotify" href="#" target="_blank">Spotifyで確認する</a>
-      <span id="premium-hint" class="muted">Premiumが必要</span>
-    </div>
   </main>
 
   <script>
